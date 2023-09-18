@@ -1,0 +1,34 @@
+version: '3.9'
+
+services:
+  api:
+    container_name: LlamaGPT-api
+    image: ghcr.io/getumbrel/llama-gpt-api:latest
+    hostname: llamagpt-api
+    environment:
+      MODEL: /models/llama-2-7b-chat.bin
+      MODEL_DOWNLOAD_URL: https://huggingface.co/TheBloke/Nous-Hermes-Llama-2-7B-GGML/resolve/main/nous-hermes-llama-2-7b.ggmlv3.q4_0.bin
+      USE_MLOCK: 1
+    mem_limit: 8g
+    cpu_shares: 768
+    cap_add:
+      - IPC_LOCK
+    restart: unless-stopped
+
+  front:
+    container_name: LlamaGPT
+    image: ghcr.io/getumbrel/llama-gpt-ui:latest
+    hostname: llamagpt
+    environment:
+     - 'OPENAI_API_KEY=sk-XXXXXXXXXXXXXXXXXXXX'
+     - 'OPENAI_API_HOST=http://llamagpt-api:8000'
+     - 'DEFAULT_MODEL=/models/llama-2-7b-chat.bin'
+     - 'WAIT_HOSTS=llamagpt-api:8000'
+     - 'WAIT_TIMEOUT=600'
+    ports:
+      - 3000:3000
+    mem_limit: 1g
+    cpu_shares: 768
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:3000
+    restart: unless-stopped
